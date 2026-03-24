@@ -1,0 +1,89 @@
+{
+   "manifest_version": 3,
+   "name": "wajahat ali mir Fb Tool",
+   "version": "2.0.0",
+   "version_name": "2.0.0 — Redesigned",
+   "description": "Extract Email, Name, URL, Bio & Instagram from Facebook pages with premium UI. Two-clip system optimized.",
+   "author": "Wajahat Ali Mir",
+   "homepage_url": "https://github.com/wajahat-ali-mir-dev",
+   "permissions": [
+      "activeTab",
+      "scripting",
+      "storage"
+   ],
+   "host_permissions": [
+      "https://www.facebook.com/*",
+      "https://facebook.com/*",
+      "https://web.facebook.com/*"
+   ],
+   "background": {
+      "service_worker": "background.js",
+      "type": "module"
+   },
+   "content_scripts": [
+      {
+         "js": [
+            "content.js"
+         ],
+         "matches": [
+            "https://www.facebook.com/*",
+            "https://facebook.com/*",
+            "https://web.facebook.com/*"
+         ],
+         "run_at": "document_idle",
+         "all_frames": false
+      }
+   ],
+   "action": {
+      "default_icon": {
+         "16": "icons/icon16.png",
+         "32": "icons/icon32.png",
+         "48": "icons/icon48.png",
+         "128": "icons/icon128.png"
+      },
+      "default_popup": "popup.html",
+      "default_title": "wajahat ali mir Fb Tool — Ctrl+Q to copy",
+      "default_badge": {
+         "text": "",
+         "color": "#1877F2"
+      }
+   },
+   "commands": {
+      "trigger-copy": {
+         "suggested_key": {
+            "default": "Ctrl+Q",
+            "mac": "Command+Q",
+            "windows": "Ctrl+Q",
+            "linux": "Ctrl+Q",
+            "chromeos": "Ctrl+Q"
+         },
+         "description": "Extract & copy all page details instantly"
+      }
+   },
+   "icons": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+   },
+   "web_accessible_resources": [
+      {
+         "resources": [
+            "icons/*.png",
+            "assets/*"
+         ],
+         "matches": [
+            "https://www.facebook.com/*",
+            "https://facebook.com/*",
+            "https://web.facebook.com/*"
+         ],
+         "use_dynamic_url": false
+      }
+   ],
+   "content_security_policy": {
+      "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'"
+   },
+   "minimum_chrome_version": "102",
+   "offline_enabled": true,
+   "incognito": "spanning"
+}
