@@ -1,0 +1,51 @@
+name: Auto Release Extension
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'manifest.json' # Only trigger release if version bumps in manifest
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: Get version from manifest
+        id: get_version
+        run: |
+          VERSION=$(jq -r .version manifest.json)
+          echo "VERSION=v$VERSION" >> $GITHUB_ENV
+
+      - name: Zip Extension Files
+        run: |
+          zip -r "wajahat-ali-mir-fb-tool-${{ env.VERSION }}.zip" . -x "*.git*" "*.github*"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.VERSION }}
+          name: Wajahat Ali Mir Fb Tool ${{ env.VERSION }}
+          body: |
+            ## Wajahat Ali Mir Fb Tool - Release ${{ env.VERSION }}
+            
+            🚀 The latest version of the Wajahat Ali Mir Fb Tool extension is here!
+            
+            ### Installation Instructions
+            1. Download the `wajahat-ali-mir-fb-tool-${{ env.VERSION }}.zip` file below.
+            2. Extract/Unzip the contents to a folder on your computer.
+            3. Open your browser and go to `chrome://extensions` or `edge://extensions`.
+            4. Enable **Developer mode** in the top-right corner.
+            5. Click **Load unpacked** and select the folders you just extracted.
+            6. You're all set! Use `Ctrl+Q` on any Facebook page to auto-extract details.
+            
+            Enjoy the lightning-fast automated scrolling and extraction workflow!
+          files: wajahat-ali-mir-fb-tool-${{ env.VERSION }}.zip
+          generate_release_notes: false
