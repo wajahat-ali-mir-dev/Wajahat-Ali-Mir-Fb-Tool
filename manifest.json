@@ -1,8 +1,8 @@
 {
    "manifest_version": 3,
    "name": "wajahat ali mir Fb Tool",
-   "version": "2.0.0",
-   "version_name": "2.0.0 — Redesigned",
+   "version": "2.1.0",
+   "version_name": "2.1.0 — Redesigned",
    "description": "Extract Email, Name, URL, Bio & Instagram from Facebook pages with premium UI. Two-clip system optimized.",
    "author": "Wajahat Ali Mir",
    "homepage_url": "https://github.com/wajahat-ali-mir-dev",
