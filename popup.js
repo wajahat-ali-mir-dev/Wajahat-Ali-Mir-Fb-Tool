@@ -139,5 +139,39 @@ cb.addEventListener("click", () => {
   });
 });
 
+    // Handle Export CSV button
+    const exportBtn = document.getElementById('exportBtn');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => {
+        setStatus('w', 'Exporting CSV...');
+        chrome.runtime.sendMessage({ action: 'exportCSV' }, (response) => {
+          setStatus('', response?.success ? 'Exported' : 'Export failed');
+        });
+      });
+    }
+
+    // Handle Clear Data button
+    const clearBtn = document.getElementById('clearBtn');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        setStatus('w', 'Clearing data...');
+        chrome.runtime.sendMessage({ action: 'clearData' }, (response) => {
+          setStatus('', response?.success ? 'Data cleared' : 'Clear failed');
+        });
+      });
+    }
+
 // Keyboard shortcut hint
-console.log("wajahat ali mir Fb Tool v2.1: Press Ctrl+Q on any Facebook page to extract data");
+console.log("wajahat ali mir Fb Tool v3.0.0: Press Ctrl+Q on any Facebook page to extract data");
+
+// Check profile state
+chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+  const tabId = tabs[0]?.id;
+  if (!tabId) return;
+  chrome.tabs.sendMessage(tabId, { action: "checkProfile" }, (resp) => {
+    void chrome.runtime.lastError;
+    if (resp && resp.isProfile) {
+      document.body.classList.add("profile-mode");
+    }
+  });
+});

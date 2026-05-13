@@ -36,7 +36,6 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* Header with glass effect */
     .hdr {
       background: linear-gradient(135deg, rgba(24, 119, 242, 0.95) 0%, rgba(13, 90, 200, 0.98) 100%);
       padding: 20px;
@@ -46,6 +45,14 @@
       position: relative;
       overflow: hidden;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    body.profile-mode {
+      --primary: #ef4444;
+      --primary-dark: #b91c1c;
+    }
+    body.profile-mode .hdr {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.95) 0%, rgba(185, 28, 28, 0.98) 100%);
     }
 
     .hdr::before {
@@ -470,6 +477,23 @@
       box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4) !important;
     }
 
+    .btn-secondary {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
     .btn-spinner {
       width: 18px;
       height: 18px;
@@ -637,7 +661,7 @@
       <h1>Professional Data Extractor</h1>
       <p>by Wajahat Ali Mir · Facebook Only</p>
     </div>
-    <span class="vbadge">v2.0</span>
+    <span class="vbadge">v3.0.0</span>
   </div>
 
   <div class="bd">
@@ -657,7 +681,7 @@
       </div>
       <div class="cell">
         <span class="clbl2">Version</span>
-        <span class="cval blue">2.0.0</span>
+        <span class="cval blue">3.0.0</span>
       </div>
       <div class="cell">
         <span class="clbl2">Fields</span>
@@ -705,6 +729,11 @@
       </svg>
       Copy Details + Email
     </button>
+    
+    <div style="display: flex; gap: 10px; margin-top: 10px;">
+      <button id="exportBtn" class="btn-secondary">Export CSV</button>
+      <button id="clearBtn" class="btn-secondary">Clear Data</button>
+    </div>
 
     <div id="results">
       <div class="res-title">Extracted Data</div>

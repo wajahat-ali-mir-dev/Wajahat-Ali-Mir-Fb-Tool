@@ -370,13 +370,79 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           cacheSize: extractionCache.size
         };
 
+      case 'clearData': {
+        return new Promise((resolve) => {
+          chrome.storage.local.set({ pageDetails: [] }, () => {
+            Logger.info('Page details cleared');
+            resolve({ success: true });
+          });
+        });
+      }
+
       case 'clearCache':
         extractionCache.clear();
         Logger.info('Cache cleared');
         return { success: true };
 
+      case 'getStoredData': {
+        return new Promise((resolve) => {
+          chrome.storage.local.get({ pageDetails: [] }, (result) => {
+            resolve({ success: true, data: result.pageDetails });
+          });
+        });
+      }
+
+      case 'deleteEntry': {
+        const index = message.index;
+        if (typeof index !== 'number') {
+          return { success: false, error: 'Invalid index' };
+        }
+        chrome.storage.local.get({ pageDetails: [] }, (result) => {
+          const arr = result.pageDetails;
+          if (index >= 0 && index < arr.length) {
+            arr.splice(index, 1);
+            chrome.storage.local.set({ pageDetails: arr }, () => {
+              Logger.info(`Deleted entry ${index}`);
+            });
+          }
+        });
+        return { success: true };
+      }
+
       case 'ping':
         return { success: true, pong: true };
+
+      // New case: Save page details to persistent storage
+      case 'savePageDetails': {
+        const details = message.details;
+        if (!details) return { success: false, error: 'No details provided' };
+        // Retrieve existing array, append, and store back
+        return new Promise((resolve) => {
+          chrome.storage.local.get({ pageDetails: [] }, (result) => {
+            const arr = result.pageDetails;
+            arr.push(details);
+            chrome.storage.local.set({ pageDetails: arr }, () => {
+              resolve({ success: true, storedCount: arr.length });
+            });
+          });
+        });
+      }
+
+      // New case: Export stored details as CSV and trigger download
+      case 'exportCSV': {
+        return new Promise((resolve) => {
+          chrome.storage.local.get({ pageDetails: [] }, (result) => {
+            const data = result.pageDetails;
+            // Convert array of objects to CSV
+            const csv = convertToCSV(data);
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            chrome.downloads.download({ url, filename: 'page_details.csv' }, () => {
+              resolve({ success: true, exportedCount: data.length });
+            });
+          });
+        });
+      }
 
       default:
         return { success: false, error: 'Unknown action' };
@@ -386,6 +452,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   handleAsync().then(sendResponse);
   return true;
 });
+
+// Helper: Convert array of objects to CSV string
+function convertToCSV(data) {
+  if (!Array.isArray(data) || data.length === 0) return '';
+  const keys = Object.keys(data[0]);
+  const rows = data.map(row => keys.map(k => {
+    const val = row[k];
+    // Escape double quotes
+    const escaped = ('' + val).replace(/"/g, '""');
+    return `"${escaped}"`;
+  }).join(','));
+  return keys.join(',') + '\n' + rows.join('\n');
+}
 
 // ============================================================================
 // LIFECYCLE EVENTS

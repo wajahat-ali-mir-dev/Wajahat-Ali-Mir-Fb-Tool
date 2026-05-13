@@ -211,6 +211,18 @@
     @media (max-width: 400px) {
       #wam-root { width: calc(100vw - 32px); right: 8px; bottom: 8px; }
     }
+
+    /* Profile Mode (Red) */
+    #wam-root.wam-profile-mode {
+      --wam-primary: #ef4444;
+      --wam-primaryDark: #b91c1c;
+    }
+    #wam-root.wam-profile-mode #wam-hdr {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.92), rgba(185, 28, 28, 0.96));
+    }
+    #wam-root.wam-profile-mode .wam-btn {
+      box-shadow: 0 3px 12px rgba(239, 68, 68, 0.3);
+    }
   `;
 
   const styleEl = document.createElement("style");
@@ -630,47 +642,56 @@
 
   /* ── CORE COPY ACTION ── */
   async function copyBothClips() {
-    if (isExtracting) return;
-    isExtracting = true;
+  if (isExtracting) return;
+  isExtracting = true;
 
-    setStatus("w", "Analyzing page...", "wam-warning");
-    setBtn(btnC, "processing", I.clip, "Copy Details + Email");
+  setStatus("w", "Analyzing page...", "wam-warning");
+  setBtn(btnC, "processing", I.clip, "Copy Details + Email");
 
-    await new Promise(r => setTimeout(r, 30));
+  await new Promise(r => setTimeout(r, 30));
 
-    const d = extractAll();
-    setPreview(d);
+  const d = extractAll();
+  setPreview(d);
 
-    const emailText = d.emails.length ? d.emails.join(", ") : "No_Email_Found";
-    const detailsText = [
-      `name : ${d.name || "Unknown"}`,
-      `url : ${d.url}`,
-      `bio : "${d.bio || "N/A"}"`,
-      `insta link : ${d.insta || "N/A"}`,
-    ].join("\n");
-
-    const ok1 = await writeClipboard(detailsText);
-    await new Promise(r => setTimeout(r, 800));
-    const ok2 = await writeClipboard(emailText);
-
-    const ok = ok1 && ok2;
-
-    if (ok) {
-      setStatus("", "2 clips ready — Ctrl+V or Win+V", "wam-active");
-      setBtn(btnC, "ok", I.clip, "Copy Details + Email");
-    } else {
-      setStatus("e", "Copy failed — try again", "wam-error");
-      setBtn(btnC, "fail", I.clip, "Copy Details + Email");
-    }
-
-    setTimeout(() => {
-      setBtn(btnC, "", I.clip, "Copy Details + Email");
-      setStatus("", "Ready — Ctrl+Q or click button", "");
-      isExtracting = false;
-    }, 1500);
-
-    return { ok, data: d };
+  // Send details to background for storage (lightweight, low memory)
+  try {
+    chrome.runtime.sendMessage({ action: 'savePageDetails', details: d }, (response) => {
+      // Optional: handle response or errors silently
+    });
+  } catch (e) {
+    // Fail silently; storage is best-effort
   }
+
+  const emailText = d.emails.length ? d.emails.join(", ") : "No_Email_Found";
+  const detailsText = [
+    `name : ${d.name || "Unknown"}`,
+    `url : ${d.url}`,
+    `bio : "${d.bio || "N/A"}"`,
+    `insta link : ${d.insta || "N/A"}`,
+  ].join("\n");
+
+  const ok1 = await writeClipboard(detailsText);
+  await new Promise(r => setTimeout(r, 800));
+  const ok2 = await writeClipboard(emailText);
+
+  const ok = ok1 && ok2;
+
+  if (ok) {
+    setStatus("", "2 clips ready — Ctrl+V or Win+V", "wam-active");
+    setBtn(btnC, "ok", I.clip, "Copy Details + Email");
+  } else {
+    setStatus("e", "Copy failed — try again", "wam-error");
+    setBtn(btnC, "fail", I.clip, "Copy Details + Email");
+  }
+
+  setTimeout(() => {
+    setBtn(btnC, "", I.clip, "Copy Details + Email");
+    setStatus("", "Ready — Ctrl+Q or click button", "");
+    isExtracting = false;
+  }, 1500);
+
+  return { ok, data: d };
+}
 
   btnC.addEventListener("click", copyBothClips);
 
@@ -693,9 +714,91 @@
         return true;
       }
       if (msg.action === "ping") {
-        sendResponse({ alive: true });
+        sendResponse({ alive: true, isProfile: typeof isProfile === 'function' ? isProfile() : false });
+      }
+      if (msg.action === "checkProfile") {
+        sendResponse({ isProfile: typeof isProfile === 'function' ? isProfile() : false });
       }
     });
   } catch (_) { }
+
+  /* ── PROFILE VS PAGE DETECTION ── */
+  function isProfile() {
+    const hasFriendIndicators = Array.from(document.querySelectorAll('[role="button"], a')).some(el => {
+      const t = el.innerText?.toLowerCase() || '';
+      return t.includes('add friend') || t === 'friends' || t.includes('mutual friends');
+    });
+
+    const hasFriendsTab = document.querySelector('a[href*="/friends"]');
+
+    const alUrl = document.querySelector('meta[property="al:android:url"]');
+    if (alUrl && alUrl.content.includes('fb://profile/')) return true;
+    if (alUrl && alUrl.content.includes('fb://page/')) return false;
+
+    return hasFriendIndicators || !!hasFriendsTab;
+  }
+
+  function checkProfileState() {
+    const isProf = isProfile();
+    const root = document.getElementById("wam-root");
+    if (root) {
+      if (isProf) {
+        root.classList.add("wam-profile-mode");
+      } else {
+        root.classList.remove("wam-profile-mode");
+      }
+    }
+  }
+
+  /* ── REELS HIGHLIGHTER ── */
+  function processReels() {
+    // Only process the first 10 reels (first 2 rows, 5 reels each row)
+    const allReels = Array.from(document.querySelectorAll('a[href*="/reel/"]'));
+    const targetReels = allReels.slice(0, 10);
+    
+    targetReels.forEach(reel => {
+      const textNodes = Array.from(reel.querySelectorAll('span, div')).map(el => el.innerText?.trim());
+      let views = 0;
+      
+      for (const text of textNodes) {
+        if (!text) continue;
+        const match = text.match(/([\d.]+)\s*([KkMm])/);
+        if (match) {
+          const num = parseFloat(match[1]);
+          const unit = match[2].toUpperCase();
+          if (unit === 'K') views = num * 1000;
+          if (unit === 'M') views = num * 1000000;
+          break;
+        } else if (text.match(/^[\d,]+$/)) {
+            const numStr = text.replace(/,/g, '');
+            if(numStr.length > 3) {
+                views = parseInt(numStr, 10);
+                if(views > 1000) break;
+            }
+        }
+      }
+
+      if (views >= 40000) {
+        if (reel.dataset.wamHighlight !== 'green') {
+          reel.style.border = '4px solid #10b981';
+          reel.style.borderRadius = '8px';
+          reel.style.boxSizing = 'border-box';
+          reel.dataset.wamHighlight = 'green';
+        }
+      } else if (views >= 11000) {
+        if (reel.dataset.wamHighlight !== 'blue') {
+          reel.style.border = '4px solid #3b82f6';
+          reel.style.borderRadius = '8px';
+          reel.style.boxSizing = 'border-box';
+          reel.dataset.wamHighlight = 'blue';
+        }
+      }
+    });
+  }
+
+  setInterval(() => {
+    checkProfileState();
+    processReels();
+  }, 1500);
 
 })();
