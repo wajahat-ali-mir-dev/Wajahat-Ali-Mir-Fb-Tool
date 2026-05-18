@@ -139,25 +139,11 @@ cb.addEventListener("click", () => {
   });
 });
 
-    // Handle Export CSV button
-    const exportBtn = document.getElementById('exportBtn');
-    if (exportBtn) {
-      exportBtn.addEventListener('click', () => {
-        setStatus('w', 'Exporting CSV...');
-        chrome.runtime.sendMessage({ action: 'exportCSV' }, (response) => {
-          setStatus('', response?.success ? 'Exported' : 'Export failed');
-        });
-      });
-    }
-
-    // Handle Clear Data button
-    const clearBtn = document.getElementById('clearBtn');
-    if (clearBtn) {
-      clearBtn.addEventListener('click', () => {
-        setStatus('w', 'Clearing data...');
-        chrome.runtime.sendMessage({ action: 'clearData' }, (response) => {
-          setStatus('', response?.success ? 'Data cleared' : 'Clear failed');
-        });
+    // Handle Open Dashboard button
+    const dashboardBtn = document.getElementById('dashboardBtn');
+    if (dashboardBtn) {
+      dashboardBtn.addEventListener('click', () => {
+        chrome.runtime.openOptionsPage();
       });
     }
 

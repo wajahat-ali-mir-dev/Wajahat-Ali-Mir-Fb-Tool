@@ -85,5 +85,9 @@
    },
    "minimum_chrome_version": "102",
    "offline_enabled": true,
-   "incognito": "spanning"
+   "incognito": "spanning",
+   "options_ui": {
+      "page": "options.html",
+      "open_in_tab": true
+   }
 }

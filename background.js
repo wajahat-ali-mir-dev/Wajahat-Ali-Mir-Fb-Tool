@@ -303,7 +303,7 @@ chrome.commands.onCommand.addListener(async (command) => {
   Logger.info('Keyboard shortcut triggered');
 
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
 
     if (!tab?.id) {
       Logger.warn('No active tab');

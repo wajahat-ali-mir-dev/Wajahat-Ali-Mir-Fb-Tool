@@ -244,12 +244,14 @@
     bio: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
     insta: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>`,
     scroll: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>`,
-    stop: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>`
+    stop: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>`,
   };
 
   /* ── BUILD UI ── */
   let iconSrc = "";
-  try { iconSrc = chrome.runtime.getURL("icons/icon48.png"); } catch (_) { }
+  try {
+    iconSrc = chrome.runtime.getURL("icons/icon48.png");
+  } catch (_) {}
 
   const logoHtml = iconSrc
     ? `<div class="wam-logo"><img src="${iconSrc}" alt="WAM"/></div>`
@@ -371,10 +373,27 @@
 
   // Junk titles that Facebook SPA sets on non-profile views
   const JUNK_TITLES = new Set([
-    'notifications', 'messages', 'watch', 'marketplace', 'groups',
-    'gaming', 'facebook', 'home', 'friends', 'events', 'pages',
-    'saved', 'memories', 'settings', 'help', 'privacy',
-    'log in', 'sign up', 'create', 'menu', 'search',
+    "notifications",
+    "messages",
+    "watch",
+    "marketplace",
+    "groups",
+    "gaming",
+    "facebook",
+    "home",
+    "friends",
+    "events",
+    "pages",
+    "saved",
+    "memories",
+    "settings",
+    "help",
+    "privacy",
+    "log in",
+    "sign up",
+    "create",
+    "menu",
+    "search",
   ]);
 
   function isJunkTitle(t) {
@@ -392,18 +411,41 @@
       const path = window.location.pathname;
       // Match /username or /pagename (not system paths)
       const systemPaths = new Set([
-        'notifications', 'messages', 'watch', 'marketplace', 'groups',
-        'gaming', 'events', 'pages', 'saved', 'memories', 'settings',
-        'help', 'privacy', 'login', 'recover', 'search', 'friends',
-        'bookmarks', 'profile.php', 'photo.php', 'video',
+        "notifications",
+        "messages",
+        "watch",
+        "marketplace",
+        "groups",
+        "gaming",
+        "events",
+        "pages",
+        "saved",
+        "memories",
+        "settings",
+        "help",
+        "privacy",
+        "login",
+        "recover",
+        "search",
+        "friends",
+        "bookmarks",
+        "profile.php",
+        "photo.php",
+        "video",
       ]);
       const slugMatch = path.match(/^\/([A-Za-z0-9._-]+)\/?/);
-      if (slugMatch && slugMatch[1] && !systemPaths.has(slugMatch[1].toLowerCase())) {
+      if (
+        slugMatch &&
+        slugMatch[1] &&
+        !systemPaths.has(slugMatch[1].toLowerCase())
+      ) {
         const slug = slugMatch[1];
         // Don't return numeric IDs as names — try to find the display name instead
         if (!/^\d+$/.test(slug)) {
           // Try to find display name from h1 inside main content first
-          const mainH1 = document.querySelector('[role="main"] h1, [data-pagelet="ProfileActions"] h1');
+          const mainH1 = document.querySelector(
+            '[role="main"] h1, [data-pagelet="ProfileActions"] h1',
+          );
           if (mainH1) {
             const h1Text = mainH1.innerText?.trim();
             if (h1Text && !isJunkTitle(h1Text) && h1Text.length < 140) {
@@ -411,7 +453,9 @@
             }
           }
           // Try the profile cover name area
-          const profileName = document.querySelector('h1[class] span a, h1 span');
+          const profileName = document.querySelector(
+            "h1[class] span a, h1 span",
+          );
           if (profileName) {
             const pn = profileName.innerText?.trim();
             if (pn && !isJunkTitle(pn) && pn.length > 1 && pn.length < 140) {
@@ -448,12 +492,14 @@
       if (cleaned && !isJunkTitle(cleaned)) return cleaned;
 
       return "Unknown";
-    } catch (_) { return "Unknown"; }
+    } catch (_) {
+      return "Unknown";
+    }
   }
 
   function getBio(pageName) {
     try {
-      const nameLC = (pageName || '').toLowerCase().trim();
+      const nameLC = (pageName || "").toLowerCase().trim();
 
       const introSelectors = [
         '[data-pagelet="ProfileTilesFeed_0"] span',
@@ -462,29 +508,51 @@
       ];
 
       const junk = [
-        'intro', 'see all', 'add bio', 'edit bio', 'details', 'overview',
-        'add a', 'edit details', 'see more', 'hide', 'report', 'block',
-        'message', 'follow', 'friend', 'share', 'like', 'comment',
-        'photo', 'video', 'post', 'reel', 'story', 'watch',
+        "intro",
+        "see all",
+        "add bio",
+        "edit bio",
+        "details",
+        "overview",
+        "add a",
+        "edit details",
+        "see more",
+        "hide",
+        "report",
+        "block",
+        "message",
+        "follow",
+        "friend",
+        "share",
+        "like",
+        "comment",
+        "photo",
+        "video",
+        "post",
+        "reel",
+        "story",
+        "watch",
       ];
 
       const candidates = [];
 
       for (const sel of introSelectors) {
         for (const el of document.querySelectorAll(sel)) {
-          const text = (el.textContent || '').trim();
+          const text = (el.textContent || "").trim();
           const textLC = text.toLowerCase();
 
           if (
             text.length >= 15 &&
             text.length <= 500 &&
-            !el.closest('a, button, [role="button"], [role="link"], h1, h2, h3, h4') &&
-            !junk.some(j => textLC === j) &&
-            text.includes(' ') &&
+            !el.closest(
+              'a, button, [role="button"], [role="link"], h1, h2, h3, h4',
+            ) &&
+            !junk.some((j) => textLC === j) &&
+            text.includes(" ") &&
             textLC !== nameLC &&
-            !textLC.startsWith('lives in') &&
-            !textLC.startsWith('joined') &&
-            !textLC.startsWith('followed by') &&
+            !textLC.startsWith("lives in") &&
+            !textLC.startsWith("joined") &&
+            !textLC.startsWith("followed by") &&
             !el.closest('nav, [role="navigation"], [role="banner"]')
           ) {
             candidates.push(text);
@@ -497,25 +565,30 @@
         return candidates[0];
       }
 
-      for (const sel of ['meta[property="og:description"]', 'meta[name="description"]']) {
+      for (const sel of [
+        'meta[property="og:description"]',
+        'meta[name="description"]',
+      ]) {
         const el = document.querySelector(sel);
-        const content = el?.content?.trim() || '';
+        const content = el?.content?.trim() || "";
         if (
           content.length > 10 &&
-          !content.toLowerCase().includes('facebook') &&
-          !content.toLowerCase().includes('log in') &&
-          !content.toLowerCase().includes('sign up')
+          !content.toLowerCase().includes("facebook") &&
+          !content.toLowerCase().includes("log in") &&
+          !content.toLowerCase().includes("sign up")
         ) {
           return content;
         }
       }
-    } catch (_) { }
+    } catch (_) {}
     return "";
   }
 
   function getInstagram() {
     try {
-      const links = document.querySelectorAll('a[href*="instagram.com"], a[href*="l.php"]');
+      const links = document.querySelectorAll(
+        'a[href*="instagram.com"], a[href*="l.php"]',
+      );
       for (const a of links) {
         let href = a.href || "";
         if (href.includes("l.php") || href.includes("facebook.com/l")) {
@@ -523,49 +596,117 @@
             const u = new URL(href);
             const t = u.searchParams.get("u");
             if (t) href = decodeURIComponent(t);
-          } catch (_) { }
+          } catch (_) {}
         }
-        if (!href.includes('instagram.com')) continue;
-        const m = href.match(/https?:\/\/(www\.)?instagram\.com\/([A-Za-z0-9_.]+)\/?/);
+        if (!href.includes("instagram.com")) continue;
+        const m = href.match(
+          /https?:\/\/(www\.)?instagram\.com\/([A-Za-z0-9_.]+)\/?/,
+        );
         if (m?.[2]) {
           const handle = m[2];
           // Reject invalid/stub handles
-          if (["p", "reel", "stories", "explore", "accounts", "_u", "_n", "about", "directory"].includes(handle)) continue;
+          if (
+            [
+              "p",
+              "reel",
+              "stories",
+              "explore",
+              "accounts",
+              "_u",
+              "_n",
+              "about",
+              "directory",
+            ].includes(handle)
+          )
+            continue;
           if (handle.length < 2) continue;
           return `https://www.instagram.com/${handle}/`;
         }
       }
-    } catch (_) { }
+    } catch (_) {}
     return "";
   }
 
   function getEmails() {
     const set = new Set();
-    const deny = ["example.com", "sentry.", "domain.com", "yoursite", "noreply", "no-reply", "facebook.com"];
+    const deny = [
+      "example.com",
+      "sentry.",
+      "domain.com",
+      "yoursite",
+      "noreply",
+      "no-reply",
+      "facebook.com",
+    ];
 
     try {
       document.querySelectorAll('a[href^="mailto:"]').forEach((a) => {
         try {
           const raw = decodeURIComponent(a.href.replace("mailto:", ""))
-            .split("?")[0].trim().toLowerCase();
+            .split("?")[0]
+            .trim()
+            .toLowerCase();
           if (raw && !deny.some((d) => raw.includes(d))) set.add(raw);
-        } catch (_) { }
+        } catch (_) {}
       });
 
-      const re = /\b([a-zA-Z0-9._+\-]{1,64}@[a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)*\.[a-zA-Z]{2,6})\b/g;
-      const contentRoot = document.querySelector('[role="main"]') || document.body;
+      const re =
+        /\b([a-zA-Z0-9._+\-]{1,64}@[a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)*\.[a-zA-Z]{2,6})\b/g;
+      const contentRoot =
+        document.querySelector('[role="main"]') || document.body;
       const text = contentRoot.innerText || "";
       let m;
       while ((m = re.exec(text)) !== null) {
         const e = m[1].toLowerCase();
         if (!deny.some((d) => e.includes(d))) set.add(e);
       }
-    } catch (_) { }
+    } catch (_) {}
     return [...set];
   }
 
+  function getPhoneNumbers() {
+    const set = new Set();
+    try {
+      // Look for typical phone links
+      document.querySelectorAll('a[href^="tel:"]').forEach((a) => {
+        const raw = a.href.replace("tel:", "").trim();
+        if (raw.length > 6) set.add(raw);
+      });
+      // Fallback text regex
+      const re = /\b(\+?\d{1,3}[\s-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/g;
+      const text =
+        (document.querySelector('[role="main"]') || document.body).innerText ||
+        "";
+      let m;
+      while ((m = re.exec(text)) !== null) {
+        set.add(m[0].trim());
+      }
+    } catch (_) {}
+    return [...set];
+  }
+
+  function isVerified() {
+    try {
+      // Look for the blue checkmark SVG by typical text content or label
+      const els = document.querySelectorAll(
+        'svg[aria-label="Verified"], svg[aria-label="Verified account"]',
+      );
+      if (els.length > 0) return true;
+      // Some cases Facebook uses title tags in SVGs
+      const titles = document.querySelectorAll("svg title");
+      for (const t of titles) {
+        if (
+          t.textContent === "Verified" ||
+          t.textContent === "Verified account"
+        )
+          return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
   function extractAll() {
-    if (extractionCache && (Date.now() - extractionCache.time < 5000)) {
+    if (extractionCache && Date.now() - extractionCache.time < 5000) {
       return extractionCache.data;
     }
     const name = getPageName();
@@ -573,6 +714,8 @@
       name,
       url: window.location.href,
       emails: getEmails(),
+      phones: getPhoneNumbers(),
+      verified: isVerified(),
       bio: getBio(name),
       insta: getInstagram(),
     };
@@ -606,7 +749,7 @@
         await navigator.clipboard.writeText(text);
         return true;
       }
-    } catch (_) { }
+    } catch (_) {}
     try {
       const ta = document.createElement("textarea");
       ta.value = text;
@@ -617,7 +760,9 @@
       const ok = document.execCommand("copy");
       document.body.removeChild(ta);
       return ok;
-    } catch (_) { return false; }
+    } catch (_) {
+      return false;
+    }
   }
 
   /* ── FEEDBACK ── */
@@ -640,58 +785,90 @@
     }
   }
 
-  /* ── CORE COPY ACTION ── */
+  async function revealHiddenInfo() {
+    try {
+      // Find "See more" or "Contact and basic info" links
+      const links = Array.from(
+        document.querySelectorAll(
+          'div[role="button"], a[role="link"], span[dir="auto"]',
+        ),
+      );
+      let clicked = false;
+      for (const el of links) {
+        const text = el.innerText?.toLowerCase().trim();
+        if (
+          text === "see more" ||
+          text === "contact info" ||
+          text === "contact and basic info"
+        ) {
+          el.click();
+          clicked = true;
+        }
+      }
+      // Scroll to trigger lazy loading
+      window.scrollBy(0, 500);
+      if (clicked) await new Promise((r) => setTimeout(r, 100));
+    } catch (e) {}
+  }
+
   async function copyBothClips() {
-  if (isExtracting) return;
-  isExtracting = true;
+    if (isExtracting) return;
+    isExtracting = true;
 
-  setStatus("w", "Analyzing page...", "wam-warning");
-  setBtn(btnC, "processing", I.clip, "Copy Details + Email");
+    setStatus("w", "Analyzing page...", "wam-warning");
+    setBtn(btnC, "processing", I.clip, "Copy Details + Email");
 
-  await new Promise(r => setTimeout(r, 30));
+    await revealHiddenInfo();
+    await new Promise((r) => setTimeout(r, 30));
 
-  const d = extractAll();
-  setPreview(d);
+    const d = extractAll();
+    setPreview(d);
 
-  // Send details to background for storage (lightweight, low memory)
-  try {
-    chrome.runtime.sendMessage({ action: 'savePageDetails', details: d }, (response) => {
-      // Optional: handle response or errors silently
-    });
-  } catch (e) {
-    // Fail silently; storage is best-effort
+    // Send details to background for storage (lightweight, low memory)
+    try {
+      chrome.runtime.sendMessage(
+        { action: "savePageDetails", details: d },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            // Ignore error if background worker is inactive
+            void chrome.runtime.lastError;
+          }
+        },
+      );
+    } catch (e) {
+      // Fail silently; storage is best-effort
+    }
+
+    const emailText = d.emails.length ? d.emails.join(", ") : "No_Email_Found";
+    const detailsText = [
+      `Guest FB Page Name: ${d.name || "Unknown"}`,
+      `Guest FB Page Link: ${d.url}`,
+      `Guest Bio: "${d.bio || ""}"`,
+      `Guest IG Link: ${d.insta || ""}`,
+    ].join("\n");
+
+    const ok1 = await writeClipboard(detailsText);
+    await new Promise((r) => setTimeout(r, 800));
+    const ok2 = await writeClipboard(emailText);
+
+    const ok = ok1 && ok2;
+
+    if (ok) {
+      setStatus("", "2 clips ready — Ctrl+V or Win+V", "wam-active");
+      setBtn(btnC, "ok", I.clip, "Copy Details + Email");
+    } else {
+      setStatus("e", "Copy failed — try again", "wam-error");
+      setBtn(btnC, "fail", I.clip, "Copy Details + Email");
+    }
+
+    setTimeout(() => {
+      setBtn(btnC, "", I.clip, "Copy Details + Email");
+      setStatus("", "Ready — Ctrl+Q or click button", "");
+      isExtracting = false;
+    }, 1500);
+
+    return { ok, data: d };
   }
-
-  const emailText = d.emails.length ? d.emails.join(", ") : "No_Email_Found";
-  const detailsText = [
-    `name : ${d.name || "Unknown"}`,
-    `url : ${d.url}`,
-    `bio : "${d.bio || "N/A"}"`,
-    `insta link : ${d.insta || "N/A"}`,
-  ].join("\n");
-
-  const ok1 = await writeClipboard(detailsText);
-  await new Promise(r => setTimeout(r, 800));
-  const ok2 = await writeClipboard(emailText);
-
-  const ok = ok1 && ok2;
-
-  if (ok) {
-    setStatus("", "2 clips ready — Ctrl+V or Win+V", "wam-active");
-    setBtn(btnC, "ok", I.clip, "Copy Details + Email");
-  } else {
-    setStatus("e", "Copy failed — try again", "wam-error");
-    setBtn(btnC, "fail", I.clip, "Copy Details + Email");
-  }
-
-  setTimeout(() => {
-    setBtn(btnC, "", I.clip, "Copy Details + Email");
-    setStatus("", "Ready — Ctrl+Q or click button", "");
-    isExtracting = false;
-  }, 1500);
-
-  return { ok, data: d };
-}
 
   btnC.addEventListener("click", copyBothClips);
 
@@ -699,7 +876,7 @@
   try {
     chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       if (msg.action === "triggerCopy") {
-        if (typeof collapsed !== 'undefined' && collapsed) {
+        if (typeof collapsed !== "undefined" && collapsed) {
           collapsed = false;
           body.classList.remove("wam-collapsed");
           colBtn.innerHTML = I.collapse;
@@ -707,35 +884,46 @@
         }
         panel.classList.remove("wam-hidden");
 
-        copyBothClips().then((result) => sendResponse({
-          success: !!result.ok,
-          data: result.data
-        }));
+        copyBothClips().then((result) =>
+          sendResponse({
+            success: !!result.ok,
+            data: result.data,
+          }),
+        );
         return true;
       }
       if (msg.action === "ping") {
-        sendResponse({ alive: true, isProfile: typeof isProfile === 'function' ? isProfile() : false });
+        sendResponse({
+          alive: true,
+          isProfile: typeof isProfile === "function" ? isProfile() : false,
+        });
       }
       if (msg.action === "checkProfile") {
-        sendResponse({ isProfile: typeof isProfile === 'function' ? isProfile() : false });
+        sendResponse({
+          isProfile: typeof isProfile === "function" ? isProfile() : false,
+        });
       }
     });
-  } catch (_) { }
+  } catch (_) {}
 
   /* ── PROFILE VS PAGE DETECTION ── */
   function isProfile() {
-    const hasFriendIndicators = Array.from(document.querySelectorAll('[role="button"], a')).some(el => {
-      const t = el.innerText?.toLowerCase() || '';
-      return t.includes('add friend') || t === 'friends' || t.includes('mutual friends');
-    });
+    const alUrl = document.querySelector('meta[property="al:android:url"]');
+    if (alUrl && alUrl.content.includes("fb://profile/")) return true;
+    if (alUrl && alUrl.content.includes("fb://page/")) return false;
 
     const hasFriendsTab = document.querySelector('a[href*="/friends"]');
+    if (hasFriendsTab) return true;
 
-    const alUrl = document.querySelector('meta[property="al:android:url"]');
-    if (alUrl && alUrl.content.includes('fb://profile/')) return true;
-    if (alUrl && alUrl.content.includes('fb://page/')) return false;
-
-    return hasFriendIndicators || !!hasFriendsTab;
+    // Lightweight check instead of iterating all buttons
+    const friendBtn = document.querySelector(
+      '[aria-label="Add friend"], [aria-label="Friends"]',
+    );
+    // Pages usually have "Follow" or "Like", Profiles have "Add friend" or just "Friends" if already friends
+    // But honestly alUrl and friends tab cover 95% of cases.
+    return (
+      !!friendBtn || !!document.querySelector('a[href*="/friends_mutual"]')
+    );
   }
 
   function checkProfileState() {
@@ -752,53 +940,85 @@
 
   /* ── REELS HIGHLIGHTER ── */
   function processReels() {
-    // Only process the first 10 reels (first 2 rows, 5 reels each row)
+    // Process the first 14 reels
     const allReels = Array.from(document.querySelectorAll('a[href*="/reel/"]'));
-    const targetReels = allReels.slice(0, 10);
-    
-    targetReels.forEach(reel => {
-      const textNodes = Array.from(reel.querySelectorAll('span, div')).map(el => el.innerText?.trim());
+    const targetReels = allReels.slice(0, 14);
+
+    targetReels.forEach((reel) => {
+      // Skip if we already colored this reel to save CPU/RAM
+      if (reel.dataset.wamHighlight) return;
+
+      const textNodes = Array.from(reel.querySelectorAll("span, div")).map(
+        (el) => el.innerText?.trim(),
+      );
       let views = 0;
-      
+
       for (const text of textNodes) {
         if (!text) continue;
         const match = text.match(/([\d.]+)\s*([KkMm])/);
         if (match) {
           const num = parseFloat(match[1]);
           const unit = match[2].toUpperCase();
-          if (unit === 'K') views = num * 1000;
-          if (unit === 'M') views = num * 1000000;
+          if (unit === "K") views = num * 1000;
+          if (unit === "M") views = num * 1000000;
           break;
         } else if (text.match(/^[\d,]+$/)) {
-            const numStr = text.replace(/,/g, '');
-            if(numStr.length > 3) {
-                views = parseInt(numStr, 10);
-                if(views > 1000) break;
-            }
+          const numStr = text.replace(/,/g, "");
+          if (numStr.length > 3) {
+            views = parseInt(numStr, 10);
+            if (views > 1000) break;
+          }
         }
       }
 
       if (views >= 40000) {
-        if (reel.dataset.wamHighlight !== 'green') {
-          reel.style.border = '4px solid #10b981';
-          reel.style.borderRadius = '8px';
-          reel.style.boxSizing = 'border-box';
-          reel.dataset.wamHighlight = 'green';
-        }
+        reel.style.border = "4px solid #10b981";
+        reel.style.borderRadius = "8px";
+        reel.style.boxSizing = "border-box";
+        reel.dataset.wamHighlight = "green";
       } else if (views >= 11000) {
-        if (reel.dataset.wamHighlight !== 'blue') {
-          reel.style.border = '4px solid #3b82f6';
-          reel.style.borderRadius = '8px';
-          reel.style.boxSizing = 'border-box';
-          reel.dataset.wamHighlight = 'blue';
-        }
+        reel.style.border = "4px solid #3b82f6";
+        reel.style.borderRadius = "8px";
+        reel.style.boxSizing = "border-box";
+        reel.dataset.wamHighlight = "blue";
+      } else {
+        reel.dataset.wamHighlight = "none"; // Mark as processed even if no color
       }
     });
   }
 
+  /* ── KEYBOARD SHORTCUT (FALLBACK & ENHANCEMENT) ── */
+  document.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key && e.key.toLowerCase() === "q") {
+      // Avoid triggering when typing in inputs
+      const activeEl = document.activeElement;
+      const isInput = activeEl && (
+        activeEl.tagName === 'INPUT' || 
+        activeEl.tagName === 'TEXTAREA' || 
+        activeEl.isContentEditable
+      );
+      
+      if (!isInput) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (typeof collapsed !== "undefined" && collapsed) {
+          collapsed = false;
+          if (body) body.classList.remove("wam-collapsed");
+          if (colBtn) {
+            colBtn.innerHTML = I.collapse;
+            colBtn.title = "Collapse";
+          }
+        }
+        if (panel) panel.classList.remove("wam-hidden");
+        
+        copyBothClips();
+      }
+    }
+  });
+
   setInterval(() => {
     checkProfileState();
     processReels();
-  }, 1500);
-
+  }, 2500);
 })();
