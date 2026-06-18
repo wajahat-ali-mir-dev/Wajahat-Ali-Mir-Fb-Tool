@@ -145,7 +145,18 @@
 
       const introSelectors = [
         '[data-pagelet="ProfileTilesFeed_0"] span',
+        '[data-pagelet="ProfileTilesFeed_0"] div',
         '[data-pagelet="above_fold_sidebar"] span',
+        '[data-pagelet="above_fold_sidebar"] div',
+        '[data-pagelet*="ProfileHeader"] span',
+        '[data-pagelet*="ProfileHeader"] div',
+        '[data-pagelet*="ProfileHeader"] [dir="auto"]',
+        '[data-pagelet*="Header"] span',
+        '[data-pagelet*="Header"] div',
+        '[data-pagelet*="Header"] [dir="auto"]',
+        '.xp6pnuw span',
+        '.xp6pnuw div',
+        '.xp6pnuw',
       ];
 
       const junk = [
@@ -173,7 +184,81 @@
         "reel",
         "story",
         "watch",
+        // Common Facebook page categories to avoid extracting them as bio
+        "public figure",
+        "entrepreneur",
+        "digital creator",
+        "personal blog",
+        "politician",
+        "athlete",
+        "musician/band",
+        "artist",
+        "author",
+        "business consultant",
+        "community",
+        "education",
+        "entertainment website",
+        "gamer",
+        "government official",
+        "journalist",
+        "local business",
+        "media/news company",
+        "news & media website",
+        "product/service",
+        "real estate agent",
+        "shopping & retail",
+        "writer",
+        "photographer",
+        "musician",
+        "band",
+        "actor",
+        "chef",
+        "comedian",
+        "fashion designer",
+        "news anchor",
+        "teacher",
+        "scientist",
+        "model",
+        "coach",
+        "speaker"
       ];
+
+      function isValidBioText(text) {
+        if (!text) return false;
+        const textLC = text.toLowerCase().trim();
+        if (text.length < 10 || text.length > 500) return false;
+        if (textLC === nameLC) return false;
+        if (!text.includes(" ")) return false;
+        if (junk.some((j) => textLC === j)) return false;
+
+        // Exclude structured profile details/stats
+        if (
+          textLC.startsWith("lives in") ||
+          textLC.startsWith("joined") ||
+          textLC.startsWith("followed by") ||
+          textLC.startsWith("works at") ||
+          textLC.startsWith("went to") ||
+          textLC.startsWith("studies at") ||
+          textLC.startsWith("from ") ||
+          textLC.startsWith("former ") ||
+          textLC.startsWith("studied ") ||
+          textLC.startsWith("in a relationship") ||
+          textLC.startsWith("single") ||
+          textLC.startsWith("married") ||
+          textLC.startsWith("divorced") ||
+          textLC.startsWith("widowed") ||
+          textLC.startsWith("engaged") ||
+          textLC.startsWith("relationship") ||
+          textLC.startsWith("managing partner") ||
+          textLC.startsWith("owner") ||
+          textLC.endsWith("followers") ||
+          textLC.endsWith("following")
+        ) {
+          return false;
+        }
+
+        return true;
+      }
 
       const candidates = [];
 
@@ -181,18 +266,10 @@
       for (const sel of introSelectors) {
         for (const el of document.querySelectorAll(sel)) {
           const text = (el.textContent || "").trim();
-          const textLC = text.toLowerCase();
 
           if (
-            text.length >= 10 &&
-            text.length <= 500 &&
             !el.closest('a, button, [role="button"], [role="link"], h1, h2, h3, h4') &&
-            !junk.some((j) => textLC === j) &&
-            text.includes(" ") &&
-            textLC !== nameLC &&
-            !textLC.startsWith("lives in") &&
-            !textLC.startsWith("joined") &&
-            !textLC.startsWith("followed by")
+            isValidBioText(text)
           ) {
             candidates.push(text);
           }
@@ -206,6 +283,8 @@
       // Phase 2: Fallback selector scoped to main container with feed/timeline/dialog/composer exclusions
       const fallbackSelectors = [
         'div[class] > div > div > div > span[dir="auto"]',
+        'div[class] > div > div > div > span',
+        'div[class] > div > div > div > div',
       ];
       const fallbackRoot = document.querySelector('[role="main"]') || document.body;
 
@@ -223,19 +302,11 @@
           }
 
           const text = (el.textContent || "").trim();
-          const textLC = text.toLowerCase();
 
           if (
-            text.length >= 10 &&
-            text.length <= 500 &&
             !el.closest('a, button, [role="button"], [role="link"], h1, h2, h3, h4') &&
-            !junk.some((j) => textLC === j) &&
-            text.includes(" ") &&
-            textLC !== nameLC &&
-            !textLC.startsWith("lives in") &&
-            !textLC.startsWith("joined") &&
-            !textLC.startsWith("followed by") &&
-            !el.closest('nav, [role="navigation"], [role="banner"]')
+            !el.closest('nav, [role="navigation"], [role="banner"]') &&
+            isValidBioText(text)
           ) {
             candidates.push(text);
           }
@@ -262,7 +333,7 @@
           return content;
         }
       }
-    } catch (_) {}
+    } catch (_) { }
     return "";
   };
 
@@ -279,7 +350,7 @@
             const u = new URL(href);
             const t = u.searchParams.get("u");
             if (t) href = decodeURIComponent(t);
-          } catch (_) {}
+          } catch (_) { }
         }
         if (!href.includes("instagram.com")) continue;
         const m = href.match(INSTAGRAM_REGEX);
@@ -303,7 +374,7 @@
           return `https://www.instagram.com/${handle}/`;
         }
       }
-    } catch (_) {}
+    } catch (_) { }
     return "";
   };
 
@@ -328,7 +399,7 @@
             .trim()
             .toLowerCase();
           if (raw && !deny.some((d) => raw.includes(d))) set.add(raw);
-        } catch (_) {}
+        } catch (_) { }
       });
 
       const contentRoot =
@@ -341,7 +412,7 @@
         const e = m[1].toLowerCase();
         if (!deny.some((d) => e.includes(d))) set.add(e);
       }
-    } catch (_) {}
+    } catch (_) { }
     return [...set];
   };
 
@@ -362,7 +433,7 @@
       while ((m = PHONE_REGEX.exec(text)) !== null) {
         set.add(m[0].trim());
       }
-    } catch (_) {}
+    } catch (_) { }
     return [...set];
   };
 
@@ -381,7 +452,7 @@
         )
           return true;
       }
-    } catch (_) {}
+    } catch (_) { }
     return false;
   };
 

@@ -1,5 +1,5 @@
 /**
- * WAM Data Extractor v2.0 — Background Service Worker
+ * Wajahat Ali Mir Toolkit v3.0 — Background Service Worker
  * Optimized for MV3 with enhanced error handling, caching, and performance
  * 
  * Features:
@@ -324,7 +324,7 @@ chrome.commands.onCommand.addListener(async (command) => {
       chrome.notifications?.create({
         type: 'basic',
         iconUrl: 'icons/icon48.png',
-        title: 'WAM Extractor',
+        title: 'wajahat_ali_mir Toolkit',
         message: 'This extension only works on Facebook pages'
       });
 
@@ -481,7 +481,7 @@ chrome.runtime.onInstalled.addListener((details) => {
   const manifest = chrome.runtime.getManifest();
 
   if (details.reason === 'install') {
-    Logger.info(`WAM Extractor v${manifest.version} installed`);
+    Logger.info(`wajahat_ali_mir Toolkit v${manifest.version} installed`);
 
     chrome.storage.local.set({
       installDate: Date.now(),
@@ -491,7 +491,7 @@ chrome.runtime.onInstalled.addListener((details) => {
     chrome.notifications?.create({
       type: 'basic',
       iconUrl: 'icons/icon128.png',
-      title: 'WAM Extractor Installed',
+      title: 'wajahat_ali_mir Toolkit Installed',
       message: 'Press Ctrl+Q on any Facebook page to extract data'
     });
 

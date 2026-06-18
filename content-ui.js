@@ -264,7 +264,7 @@
       <div class="wam-hl">
         ${logoHtml}
         <div>
-          <div class="wam-t1">wajahat ali mir Fb Tool</div>
+          <div class="wam-t1">wajahat_ali_mir Toolkit</div>
           <div class="wam-t2">v3.0 · Fast Modules</div>
         </div>
       </div>
@@ -407,70 +407,88 @@
   }
 
   /* ── COPY TRIGGER Orchestration ── */
+  let activeExtractionPromise = null;
+
   async function copyBothClips() {
-    if (isExtracting) return;
-    if (!extensionEnabled) return;
-    isExtracting = true;
-
-    setStatus("w", "Analyzing page...", "wam-warning");
-    setBtn(btnC, "processing", I.clip, "Copy Details + Email");
-
-    if (window.wam.revealHiddenInfo) {
-      await window.wam.revealHiddenInfo();
-    }
-    await new Promise((r) => setTimeout(r, 30));
-
-    const d = window.wam.extractAll ? window.wam.extractAll() : {};
-    setPreview(d);
-
-    // Save page details to background (best effort)
-    try {
-      chrome.runtime.sendMessage(
-        { action: "savePageDetails", details: d },
-        (response) => {
-          void chrome.runtime.lastError;
-        },
-      );
-    } catch (_) {}
-
-    const emailText = d.emails && d.emails.length ? d.emails.join(", ") : "No_Email_Found";
+    if (!extensionEnabled) return { ok: false, error: "Extension disabled" };
     
-    // We add the Guest Email field here in the details block to ensure it gets copied reliably
-    const detailsText = [
-      `Guest FB Page Name: ${d.name || "Unknown"}`,
-      `Guest FB Page Link: ${d.url}`,
-      `Guest Bio: "${d.bio || ""}"`,
-      `Guest IG Link: ${d.insta || ""}`,
-      `Guest Email: ${emailText}`
-    ].join("\n");
-
-    let ok1 = false;
-    let ok2 = false;
-
-    if (window.wam.writeClipboard) {
-      ok1 = await window.wam.writeClipboard(detailsText);
-      await new Promise((r) => setTimeout(r, 800));
-      ok2 = await window.wam.writeClipboard(emailText);
+    if (activeExtractionPromise) {
+      return activeExtractionPromise;
     }
 
-    // Success if at least the details block (which now includes email) was written
-    const ok = ok1 || ok2;
+    activeExtractionPromise = (async () => {
+      isExtracting = true;
+      setStatus("w", "Analyzing page...", "wam-warning");
+      setBtn(btnC, "processing", I.clip, "Copy Details + Email");
 
-    if (ok) {
-      setStatus("", "Clips ready — Ctrl+V (or Win+V)", "wam-active");
-      setBtn(btnC, "ok", I.clip, "Copy Details + Email");
-    } else {
-      setStatus("e", "Copy failed — try again", "wam-error");
-      setBtn(btnC, "fail", I.clip, "Copy Details + Email");
-    }
+      try {
+        if (window.wam.revealHiddenInfo) {
+          await window.wam.revealHiddenInfo();
+        }
+        await new Promise((r) => setTimeout(r, 30));
 
-    setTimeout(() => {
-      setBtn(btnC, "", I.clip, "Copy Details + Email");
-      setStatus("", "Ready — Ctrl+Q or click button", "");
-      isExtracting = false;
-    }, 1500);
+        const d = window.wam.extractAll ? window.wam.extractAll() : {};
+        setPreview(d);
 
-    return { ok, data: d };
+        // Save page details to background (best effort)
+        try {
+          chrome.runtime.sendMessage(
+            { action: "savePageDetails", details: d },
+            (response) => {
+              void chrome.runtime.lastError;
+            },
+          );
+        } catch (_) {}
+
+        const emailText = d.emails && d.emails.length ? d.emails.join(", ") : "No_Email_Found";
+        
+        // We add the Guest Email field here in the details block to ensure it gets copied reliably
+        const detailsText = [
+          `Guest FB Page Name: ${d.name || "Unknown"}`,
+          `Guest FB Page Link: ${d.url}`,
+          `Guest Bio: "${d.bio || ""}"`,
+          `Guest IG Link: ${d.insta || ""}`,
+          `Guest Email: ${emailText}`
+        ].join("\n");
+
+        let ok1 = false;
+        let ok2 = false;
+
+        if (window.wam.writeClipboard) {
+          ok1 = await window.wam.writeClipboard(detailsText);
+          await new Promise((r) => setTimeout(r, 800));
+          ok2 = await window.wam.writeClipboard(emailText);
+        }
+
+        // Success if at least the details block (which now includes email) was written
+        const ok = ok1 || ok2;
+
+        if (ok) {
+          setStatus("", "Clips ready — Ctrl+V (or Win+V)", "wam-active");
+          setBtn(btnC, "ok", I.clip, "Copy Details + Email");
+        } else {
+          setStatus("e", "Copy failed — try again", "wam-error");
+          setBtn(btnC, "fail", I.clip, "Copy Details + Email");
+        }
+
+        setTimeout(() => {
+          setBtn(btnC, "", I.clip, "Copy Details + Email");
+          setStatus("", "Ready — Ctrl+Q or click button", "");
+          isExtracting = false;
+        }, 1500);
+
+        return { ok, data: d };
+      } catch (err) {
+        setStatus("e", "Error occurred", "wam-error");
+        setBtn(btnC, "fail", I.clip, "Copy Details + Email");
+        isExtracting = false;
+        return { ok: false, error: err.message };
+      } finally {
+        activeExtractionPromise = null;
+      }
+    })();
+
+    return activeExtractionPromise;
   }
 
   btnC.addEventListener("click", copyBothClips);
@@ -505,8 +523,9 @@
 
         copyBothClips().then((result) =>
           sendResponse({
-            success: !!result.ok,
-            data: result.data,
+            success: !!(result && result.ok),
+            data: result ? result.data : null,
+            error: (result && result.ok) ? null : ((result && result.error) || "Clipboard copy failed")
           }),
         );
         return true;

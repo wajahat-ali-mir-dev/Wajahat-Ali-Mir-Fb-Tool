@@ -1,6 +1,6 @@
 {
    "manifest_version": 3,
-   "name": "wajahat ali mir Fb Tool",
+   "name": "wajahat_ali_mir Toolkit",
    "version": "3.0.0",
    "version_name": "3.0.0 — Light Optimized",
    "description": "Lightweight Facebook data extractor with persistent storage and CSV export.",
@@ -44,7 +44,7 @@
          "128": "icons/icon128.png"
       },
       "default_popup": "popup.html",
-      "default_title": "wajahat ali mir Fb Tool — Ctrl+Q to copy",
+      "default_title": "wajahat_ali_mir Toolkit — Ctrl+Q to copy",
       "default_badge": {
          "text": "",
          "color": "#1877F2"

@@ -238,7 +238,7 @@ cb.addEventListener("click", () => {
     }
 
 // Keyboard shortcut hint
-console.log("wajahat ali mir Fb Tool v3.0.0: Press Ctrl+Q on any Facebook page to extract data");
+console.log("wajahat_ali_mir Toolkit v3.0.0: Press Ctrl+Q on any Facebook page to extract data");
 
 // Check profile state
 chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
