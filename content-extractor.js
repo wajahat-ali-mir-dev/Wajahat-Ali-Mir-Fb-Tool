@@ -1,6 +1,6 @@
 /**
  * Wajahat Ali Mir Fb Tool — Extractor Module
- * Core data extraction logic with advanced heuristics and strict post text filtering.
+ * Core data extraction logic optimized for speed and low CPU utilization.
  */
 (function () {
   "use strict";
@@ -8,6 +8,12 @@
   window.wam = window.wam || {};
 
   let extractionCache = null;
+
+  /* ── COMPILED REGEXES (Static to module level for memory efficiency) ── */
+  const SLUG_REGEX = /^\/([A-Za-z0-9._-]+)\/?/;
+  const EMAIL_REGEX = /\b([a-zA-Z0-9._+\-]{1,64}@[a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)*\.[a-zA-Z]{2,6})\b/g;
+  const PHONE_REGEX = /\b(\+?\d{1,3}[\s-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/g;
+  const INSTAGRAM_REGEX = /https?:\/\/(www\.)?instagram\.com\/([A-Za-z0-9_.]+)\/?/;
 
   // Junk titles that Facebook SPA sets on non-profile views
   const JUNK_TITLES = new Set([
@@ -70,7 +76,7 @@
         "photo.php",
         "video",
       ]);
-      const slugMatch = path.match(/^\/([A-Za-z0-9._-]+)\/?/);
+      const slugMatch = path.match(SLUG_REGEX);
       if (
         slugMatch &&
         slugMatch[1] &&
@@ -83,7 +89,7 @@
             '[role="main"] h1, [data-pagelet="ProfileActions"] h1',
           );
           if (mainH1) {
-            const h1Text = mainH1.innerText?.trim();
+            const h1Text = mainH1.textContent?.trim();
             if (h1Text && !isJunkTitle(h1Text) && h1Text.length < 140) {
               return h1Text;
             }
@@ -93,7 +99,7 @@
             "h1[class] span a, h1 span",
           );
           if (profileName) {
-            const pn = profileName.innerText?.trim();
+            const pn = profileName.textContent?.trim();
             if (pn && !isJunkTitle(pn) && pn.length > 1 && pn.length < 140) {
               return pn;
             }
@@ -106,7 +112,7 @@
       const mainContent = document.querySelector('[role="main"]');
       if (mainContent) {
         for (const h of mainContent.querySelectorAll("h1")) {
-          const t = h.innerText?.trim();
+          const t = h.textContent?.trim();
           if (t && t.length > 1 && t.length < 140 && !isJunkTitle(t)) {
             return t;
           }
@@ -194,17 +200,17 @@
       }
 
       if (candidates.length) {
-        // Bio is usually the first card text in DOM order
         return candidates[0];
       }
 
-      // Phase 2: Fallback selector with STRICT feed/timeline/dialog/composer exclusions
+      // Phase 2: Fallback selector scoped to main container with feed/timeline/dialog/composer exclusions
       const fallbackSelectors = [
         'div[class] > div > div > div > span[dir="auto"]',
       ];
+      const fallbackRoot = document.querySelector('[role="main"]') || document.body;
 
       for (const sel of fallbackSelectors) {
-        for (const el of document.querySelectorAll(sel)) {
+        for (const el of fallbackRoot.querySelectorAll(sel)) {
           // Exclude elements inside posts, feed, timeline, dialogs, composer
           if (
             el.closest('[role="article"]') ||
@@ -276,9 +282,7 @@
           } catch (_) {}
         }
         if (!href.includes("instagram.com")) continue;
-        const m = href.match(
-          /https?:\/\/(www\.)?instagram\.com\/([A-Za-z0-9_.]+)\/?/,
-        );
+        const m = href.match(INSTAGRAM_REGEX);
         if (m?.[2]) {
           const handle = m[2];
           if (
@@ -327,13 +331,13 @@
         } catch (_) {}
       });
 
-      const re =
-        /\b([a-zA-Z0-9._+\-]{1,64}@[a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)*\.[a-zA-Z]{2,6})\b/g;
       const contentRoot =
         document.querySelector('[role="main"]') || document.body;
-      const text = contentRoot.innerText || "";
+      // textContent is ~100x faster than innerText because it avoids triggering layout reflow
+      const text = contentRoot.textContent || "";
       let m;
-      while ((m = re.exec(text)) !== null) {
+      EMAIL_REGEX.lastIndex = 0; // Reset regex state
+      while ((m = EMAIL_REGEX.exec(text)) !== null) {
         const e = m[1].toLowerCase();
         if (!deny.some((d) => e.includes(d))) set.add(e);
       }
@@ -349,12 +353,13 @@
         const raw = a.href.replace("tel:", "").trim();
         if (raw.length > 6) set.add(raw);
       });
-      const re = /\b(\+?\d{1,3}[\s-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/g;
-      const text =
-        (document.querySelector('[role="main"]') || document.body).innerText ||
-        "";
+      const contentRoot =
+        document.querySelector('[role="main"]') || document.body;
+      // textContent is ~100x faster than innerText because it avoids triggering layout reflow
+      const text = contentRoot.textContent || "";
       let m;
-      while ((m = re.exec(text)) !== null) {
+      PHONE_REGEX.lastIndex = 0; // Reset regex state
+      while ((m = PHONE_REGEX.exec(text)) !== null) {
         set.add(m[0].trim());
       }
     } catch (_) {}

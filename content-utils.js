@@ -33,15 +33,16 @@
   /* ── REVEAL LAZY-LOADED/HIDDEN INFO ── */
   window.wam.revealHiddenInfo = async function () {
     try {
-      // Find "See more" or "Contact and basic info" links
+      // Find "See more" or "Contact and basic info" links (scoped to [role="main"] for performance)
+      const root = document.querySelector('[role="main"]') || document.body;
       const links = Array.from(
-        document.querySelectorAll(
+        root.querySelectorAll(
           'div[role="button"], a[role="link"], span[dir="auto"]',
         ),
       );
       let clicked = false;
       for (const el of links) {
-        const text = el.innerText?.toLowerCase().trim();
+        const text = el.textContent?.toLowerCase().trim();
         if (
           text === "see more" ||
           text === "contact info" ||
@@ -89,16 +90,15 @@
 
   /* ── REELS HIGHLIGHTER ── */
   window.wam.processReels = function () {
-    // Process the first 14 reels
-    const allReels = Array.from(document.querySelectorAll('a[href*="/reel/"]'));
+    // Process the first 14 unprocessed reels (scoped to [role="main"] and leveraging CSS :not selector)
+    const root = document.querySelector('[role="main"]') || document.body;
+    const allReels = Array.from(root.querySelectorAll('a[href*="/reel/"]:not([data-wam-highlight])'));
     const targetReels = allReels.slice(0, 14);
 
     targetReels.forEach((reel) => {
-      // Skip if we already colored this reel to save CPU/RAM
-      if (reel.dataset.wamHighlight) return;
-
+      // Use textContent instead of innerText to prevent expensive layout calculations (reflows)
       const textNodes = Array.from(reel.querySelectorAll("span, div")).map(
-        (el) => el.innerText?.trim(),
+        (el) => el.textContent?.trim() || "",
       );
       let views = 0;
 

@@ -552,11 +552,11 @@
     }
   });
 
-  // Regular updates
+  // Regular updates (increased from 2500ms to 4000ms to save CPU cycles on inactive tabs)
   setInterval(() => {
     if (window.wam.checkProfileState) window.wam.checkProfileState();
     if (window.wam.processReels) window.wam.processReels();
-  }, 2500);
+  }, 4000);
 
   // Initial state check
   try {
