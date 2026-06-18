@@ -1,6 +1,6 @@
 /**
- * wajahat ali mir Fb Tool v2.1 — Optimized
- * Lightweight UI, fast extraction, auto-scroll
+ * Wajahat Ali Mir Fb Tool — User Interface Module
+ * Styles, panel elements, user interactions, keyboard shortcuts, and message orchestration.
  */
 (function () {
   "use strict";
@@ -8,12 +8,12 @@
   if (document.getElementById("wam-root")) return;
 
   /* ── STATE ── */
-  let extractionCache = null;
   let isExtracting = false;
   let autoScrolling = false;
   let scrollRAF = null;
+  let extensionEnabled = true;
 
-  /* ── STYLES — Lean & fast ── */
+  /* ── STYLES ── */
   const css = `
     #wam-root {
       --wam-primary: #1877F2;
@@ -265,7 +265,7 @@
         ${logoHtml}
         <div>
           <div class="wam-t1">wajahat ali mir Fb Tool</div>
-          <div class="wam-t2">v2.1 · Fast</div>
+          <div class="wam-t2">v3.0 · Fast Modules</div>
         </div>
       </div>
       <div class="wam-hbtns">
@@ -342,8 +342,7 @@
     scrollBtn.innerHTML = I.stop;
     scrollBtn.title = "Stop Scroll";
 
-    let lastTime = 0;
-    function step(ts) {
+    function step() {
       if (!autoScrolling) return;
       window.scrollBy(0, 150);
       scrollRAF = requestAnimationFrame(step);
@@ -369,403 +368,25 @@
     }
   });
 
-  /* ── DATA EXTRACTION — Fixed ── */
-
-  // Junk titles that Facebook SPA sets on non-profile views
-  const JUNK_TITLES = new Set([
-    "notifications",
-    "messages",
-    "watch",
-    "marketplace",
-    "groups",
-    "gaming",
-    "facebook",
-    "home",
-    "friends",
-    "events",
-    "pages",
-    "saved",
-    "memories",
-    "settings",
-    "help",
-    "privacy",
-    "log in",
-    "sign up",
-    "create",
-    "menu",
-    "search",
-  ]);
-
-  function isJunkTitle(t) {
-    if (!t) return true;
-    const lc = t.toLowerCase().trim();
-    if (JUNK_TITLES.has(lc)) return true;
-    // Reject very short or generic titles
-    if (lc.length < 2) return true;
-    return false;
-  }
-
-  function getPageName() {
-    try {
-      // 1. Try extracting from URL slug (most reliable on Facebook SPA)
-      const path = window.location.pathname;
-      // Match /username or /pagename (not system paths)
-      const systemPaths = new Set([
-        "notifications",
-        "messages",
-        "watch",
-        "marketplace",
-        "groups",
-        "gaming",
-        "events",
-        "pages",
-        "saved",
-        "memories",
-        "settings",
-        "help",
-        "privacy",
-        "login",
-        "recover",
-        "search",
-        "friends",
-        "bookmarks",
-        "profile.php",
-        "photo.php",
-        "video",
-      ]);
-      const slugMatch = path.match(/^\/([A-Za-z0-9._-]+)\/?/);
-      if (
-        slugMatch &&
-        slugMatch[1] &&
-        !systemPaths.has(slugMatch[1].toLowerCase())
-      ) {
-        const slug = slugMatch[1];
-        // Don't return numeric IDs as names — try to find the display name instead
-        if (!/^\d+$/.test(slug)) {
-          // Try to find display name from h1 inside main content first
-          const mainH1 = document.querySelector(
-            '[role="main"] h1, [data-pagelet="ProfileActions"] h1',
-          );
-          if (mainH1) {
-            const h1Text = mainH1.innerText?.trim();
-            if (h1Text && !isJunkTitle(h1Text) && h1Text.length < 140) {
-              return h1Text;
-            }
-          }
-          // Try the profile cover name area
-          const profileName = document.querySelector(
-            "h1[class] span a, h1 span",
-          );
-          if (profileName) {
-            const pn = profileName.innerText?.trim();
-            if (pn && !isJunkTitle(pn) && pn.length > 1 && pn.length < 140) {
-              return pn;
-            }
-          }
-          // Return the slug as display name
-          return slug;
-        }
-      }
-
-      // 2. Try h1 elements inside main content area only (avoid nav/sidebar h1s)
-      const mainContent = document.querySelector('[role="main"]');
-      if (mainContent) {
-        for (const h of mainContent.querySelectorAll("h1")) {
-          const t = h.innerText?.trim();
-          if (t && t.length > 1 && t.length < 140 && !isJunkTitle(t)) {
-            return t;
-          }
-        }
-      }
-
-      // 3. Try og:title but ONLY if not junk
-      const og = document.querySelector('meta[property="og:title"]');
-      if (og?.content?.trim() && !isJunkTitle(og.content.trim())) {
-        return og.content.trim();
-      }
-
-      // 4. Fallback: clean document.title
-      const cleaned = document.title
-        .replace(/\s*[|\-–—]\s*(Facebook|Instagram|LinkedIn).*$/i, "")
-        .replace(/^\(\d+\)\s*/, "") // Remove notification count like "(3) "
-        .trim();
-      if (cleaned && !isJunkTitle(cleaned)) return cleaned;
-
-      return "Unknown";
-    } catch (_) {
-      return "Unknown";
-    }
-  }
-
-  function getBio(pageName) {
-    try {
-      const nameLC = (pageName || "").toLowerCase().trim();
-
-      const introSelectors = [
-        '[data-pagelet="ProfileTilesFeed_0"] span',
-        '[data-pagelet="above_fold_sidebar"] span',
-        'div[class] > div > div > div > span[dir="auto"]',
-      ];
-
-      const junk = [
-        "intro",
-        "see all",
-        "add bio",
-        "edit bio",
-        "details",
-        "overview",
-        "add a",
-        "edit details",
-        "see more",
-        "hide",
-        "report",
-        "block",
-        "message",
-        "follow",
-        "friend",
-        "share",
-        "like",
-        "comment",
-        "photo",
-        "video",
-        "post",
-        "reel",
-        "story",
-        "watch",
-      ];
-
-      const candidates = [];
-
-      for (const sel of introSelectors) {
-        for (const el of document.querySelectorAll(sel)) {
-          const text = (el.textContent || "").trim();
-          const textLC = text.toLowerCase();
-
-          if (
-            text.length >= 15 &&
-            text.length <= 500 &&
-            !el.closest(
-              'a, button, [role="button"], [role="link"], h1, h2, h3, h4',
-            ) &&
-            !junk.some((j) => textLC === j) &&
-            text.includes(" ") &&
-            textLC !== nameLC &&
-            !textLC.startsWith("lives in") &&
-            !textLC.startsWith("joined") &&
-            !textLC.startsWith("followed by") &&
-            !el.closest('nav, [role="navigation"], [role="banner"]')
-          ) {
-            candidates.push(text);
-          }
-        }
-      }
-
-      if (candidates.length) {
-        candidates.sort((a, b) => b.length - a.length);
-        return candidates[0];
-      }
-
-      for (const sel of [
-        'meta[property="og:description"]',
-        'meta[name="description"]',
-      ]) {
-        const el = document.querySelector(sel);
-        const content = el?.content?.trim() || "";
-        if (
-          content.length > 10 &&
-          !content.toLowerCase().includes("facebook") &&
-          !content.toLowerCase().includes("log in") &&
-          !content.toLowerCase().includes("sign up")
-        ) {
-          return content;
-        }
-      }
-    } catch (_) {}
-    return "";
-  }
-
-  function getInstagram() {
-    try {
-      const links = document.querySelectorAll(
-        'a[href*="instagram.com"], a[href*="l.php"]',
-      );
-      for (const a of links) {
-        let href = a.href || "";
-        if (href.includes("l.php") || href.includes("facebook.com/l")) {
-          try {
-            const u = new URL(href);
-            const t = u.searchParams.get("u");
-            if (t) href = decodeURIComponent(t);
-          } catch (_) {}
-        }
-        if (!href.includes("instagram.com")) continue;
-        const m = href.match(
-          /https?:\/\/(www\.)?instagram\.com\/([A-Za-z0-9_.]+)\/?/,
-        );
-        if (m?.[2]) {
-          const handle = m[2];
-          // Reject invalid/stub handles
-          if (
-            [
-              "p",
-              "reel",
-              "stories",
-              "explore",
-              "accounts",
-              "_u",
-              "_n",
-              "about",
-              "directory",
-            ].includes(handle)
-          )
-            continue;
-          if (handle.length < 2) continue;
-          return `https://www.instagram.com/${handle}/`;
-        }
-      }
-    } catch (_) {}
-    return "";
-  }
-
-  function getEmails() {
-    const set = new Set();
-    const deny = [
-      "example.com",
-      "sentry.",
-      "domain.com",
-      "yoursite",
-      "noreply",
-      "no-reply",
-      "facebook.com",
-    ];
-
-    try {
-      document.querySelectorAll('a[href^="mailto:"]').forEach((a) => {
-        try {
-          const raw = decodeURIComponent(a.href.replace("mailto:", ""))
-            .split("?")[0]
-            .trim()
-            .toLowerCase();
-          if (raw && !deny.some((d) => raw.includes(d))) set.add(raw);
-        } catch (_) {}
-      });
-
-      const re =
-        /\b([a-zA-Z0-9._+\-]{1,64}@[a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)*\.[a-zA-Z]{2,6})\b/g;
-      const contentRoot =
-        document.querySelector('[role="main"]') || document.body;
-      const text = contentRoot.innerText || "";
-      let m;
-      while ((m = re.exec(text)) !== null) {
-        const e = m[1].toLowerCase();
-        if (!deny.some((d) => e.includes(d))) set.add(e);
-      }
-    } catch (_) {}
-    return [...set];
-  }
-
-  function getPhoneNumbers() {
-    const set = new Set();
-    try {
-      // Look for typical phone links
-      document.querySelectorAll('a[href^="tel:"]').forEach((a) => {
-        const raw = a.href.replace("tel:", "").trim();
-        if (raw.length > 6) set.add(raw);
-      });
-      // Fallback text regex
-      const re = /\b(\+?\d{1,3}[\s-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/g;
-      const text =
-        (document.querySelector('[role="main"]') || document.body).innerText ||
-        "";
-      let m;
-      while ((m = re.exec(text)) !== null) {
-        set.add(m[0].trim());
-      }
-    } catch (_) {}
-    return [...set];
-  }
-
-  function isVerified() {
-    try {
-      // Look for the blue checkmark SVG by typical text content or label
-      const els = document.querySelectorAll(
-        'svg[aria-label="Verified"], svg[aria-label="Verified account"]',
-      );
-      if (els.length > 0) return true;
-      // Some cases Facebook uses title tags in SVGs
-      const titles = document.querySelectorAll("svg title");
-      for (const t of titles) {
-        if (
-          t.textContent === "Verified" ||
-          t.textContent === "Verified account"
-        )
-          return true;
-      }
-    } catch (_) {}
-    return false;
-  }
-
-  function extractAll() {
-    if (extractionCache && Date.now() - extractionCache.time < 5000) {
-      return extractionCache.data;
-    }
-    const name = getPageName();
-    const data = {
-      name,
-      url: window.location.href,
-      emails: getEmails(),
-      phones: getPhoneNumbers(),
-      verified: isVerified(),
-      bio: getBio(name),
-      insta: getInstagram(),
-    };
-    extractionCache = { data, time: Date.now() };
-    return data;
-  }
-
-  /* ── UI UPDATES ── */
-  function clip(s, n) {
+  /* ── PREVIEW UI UPDATE ── */
+  function clipText(s, n) {
     return s.length > n ? s.slice(0, n) + "…" : s;
   }
 
   function setPreview(d) {
     const eStr = d.emails.length ? d.emails.join(", ") : "";
-    wpEmail.textContent = eStr ? clip(eStr, 28) : "Not found";
+    wpEmail.textContent = eStr ? clipText(eStr, 28) : "Not found";
     wpEmail.className = "wam-rv " + (eStr ? "ok" : "nil");
-    wpName.textContent = d.name ? clip(d.name, 28) : "—";
+    wpName.textContent = d.name ? clipText(d.name, 28) : "—";
     wpName.className = "wam-rv " + (d.name ? "ok" : "nil");
-    wpUrl.textContent = clip(d.url, 28);
+    wpUrl.textContent = clipText(d.url, 28);
     wpUrl.className = "wam-rv ok";
-    wpBio.textContent = d.bio ? clip(d.bio, 28) : "Not found";
+    wpBio.textContent = d.bio ? clipText(d.bio, 28) : "Not found";
     wpBio.className = "wam-rv " + (d.bio ? "ok" : "nil");
-    wpInsta.textContent = d.insta ? clip(d.insta, 28) : "Not found";
+    wpInsta.textContent = d.insta ? clipText(d.insta, 28) : "Not found";
     wpInsta.className = "wam-rv " + (d.insta ? "ok" : "nil");
   }
 
-  /* ── CLIPBOARD ── */
-  async function writeClipboard(text) {
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text);
-        return true;
-      }
-    } catch (_) {}
-    try {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0;";
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      const ok = document.execCommand("copy");
-      document.body.removeChild(ta);
-      return ok;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  /* ── FEEDBACK ── */
   function setStatus(cls, msg, type = "") {
     dot.className = cls;
     stxt.textContent = msg;
@@ -785,76 +406,58 @@
     }
   }
 
-  async function revealHiddenInfo() {
-    try {
-      // Find "See more" or "Contact and basic info" links
-      const links = Array.from(
-        document.querySelectorAll(
-          'div[role="button"], a[role="link"], span[dir="auto"]',
-        ),
-      );
-      let clicked = false;
-      for (const el of links) {
-        const text = el.innerText?.toLowerCase().trim();
-        if (
-          text === "see more" ||
-          text === "contact info" ||
-          text === "contact and basic info"
-        ) {
-          el.click();
-          clicked = true;
-        }
-      }
-      // Scroll to trigger lazy loading
-      window.scrollBy(0, 500);
-      if (clicked) await new Promise((r) => setTimeout(r, 100));
-    } catch (e) {}
-  }
-
+  /* ── COPY TRIGGER Orchestration ── */
   async function copyBothClips() {
     if (isExtracting) return;
+    if (!extensionEnabled) return;
     isExtracting = true;
 
     setStatus("w", "Analyzing page...", "wam-warning");
     setBtn(btnC, "processing", I.clip, "Copy Details + Email");
 
-    await revealHiddenInfo();
+    if (window.wam.revealHiddenInfo) {
+      await window.wam.revealHiddenInfo();
+    }
     await new Promise((r) => setTimeout(r, 30));
 
-    const d = extractAll();
+    const d = window.wam.extractAll ? window.wam.extractAll() : {};
     setPreview(d);
 
-    // Send details to background for storage (lightweight, low memory)
+    // Save page details to background (best effort)
     try {
       chrome.runtime.sendMessage(
         { action: "savePageDetails", details: d },
         (response) => {
-          if (chrome.runtime.lastError) {
-            // Ignore error if background worker is inactive
-            void chrome.runtime.lastError;
-          }
+          void chrome.runtime.lastError;
         },
       );
-    } catch (e) {
-      // Fail silently; storage is best-effort
-    }
+    } catch (_) {}
 
-    const emailText = d.emails.length ? d.emails.join(", ") : "No_Email_Found";
+    const emailText = d.emails && d.emails.length ? d.emails.join(", ") : "No_Email_Found";
+    
+    // We add the Guest Email field here in the details block to ensure it gets copied reliably
     const detailsText = [
       `Guest FB Page Name: ${d.name || "Unknown"}`,
       `Guest FB Page Link: ${d.url}`,
       `Guest Bio: "${d.bio || ""}"`,
       `Guest IG Link: ${d.insta || ""}`,
+      `Guest Email: ${emailText}`
     ].join("\n");
 
-    const ok1 = await writeClipboard(detailsText);
-    await new Promise((r) => setTimeout(r, 800));
-    const ok2 = await writeClipboard(emailText);
+    let ok1 = false;
+    let ok2 = false;
 
-    const ok = ok1 && ok2;
+    if (window.wam.writeClipboard) {
+      ok1 = await window.wam.writeClipboard(detailsText);
+      await new Promise((r) => setTimeout(r, 800));
+      ok2 = await window.wam.writeClipboard(emailText);
+    }
+
+    // Success if at least the details block (which now includes email) was written
+    const ok = ok1 || ok2;
 
     if (ok) {
-      setStatus("", "2 clips ready — Ctrl+V or Win+V", "wam-active");
+      setStatus("", "Clips ready — Ctrl+V (or Win+V)", "wam-active");
       setBtn(btnC, "ok", I.clip, "Copy Details + Email");
     } else {
       setStatus("e", "Copy failed — try again", "wam-error");
@@ -875,7 +478,23 @@
   /* ── MESSAGE LISTENER ── */
   try {
     chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+      if (msg.action === "setEnabled") {
+        extensionEnabled = !!msg.enabled;
+        if (extensionEnabled) {
+          panel.classList.remove("wam-hidden");
+          setStatus("", "Ready — Ctrl+Q or click button", "");
+        } else {
+          panel.classList.add("wam-hidden");
+          if (autoScrolling) stopAutoScroll();
+        }
+        sendResponse({ success: true });
+        return;
+      }
       if (msg.action === "triggerCopy") {
+        if (!extensionEnabled) {
+          sendResponse({ success: false, error: "Extension disabled" });
+          return;
+        }
         if (typeof collapsed !== "undefined" && collapsed) {
           collapsed = false;
           body.classList.remove("wam-collapsed");
@@ -895,102 +514,20 @@
       if (msg.action === "ping") {
         sendResponse({
           alive: true,
-          isProfile: typeof isProfile === "function" ? isProfile() : false,
+          isProfile: window.wam.isProfile ? window.wam.isProfile() : false,
         });
       }
       if (msg.action === "checkProfile") {
         sendResponse({
-          isProfile: typeof isProfile === "function" ? isProfile() : false,
+          isProfile: window.wam.isProfile ? window.wam.isProfile() : false,
         });
       }
     });
   } catch (_) {}
 
-  /* ── PROFILE VS PAGE DETECTION ── */
-  function isProfile() {
-    const alUrl = document.querySelector('meta[property="al:android:url"]');
-    if (alUrl && alUrl.content.includes("fb://profile/")) return true;
-    if (alUrl && alUrl.content.includes("fb://page/")) return false;
-
-    const hasFriendsTab = document.querySelector('a[href*="/friends"]');
-    if (hasFriendsTab) return true;
-
-    // Lightweight check instead of iterating all buttons
-    const friendBtn = document.querySelector(
-      '[aria-label="Add friend"], [aria-label="Friends"]',
-    );
-    // Pages usually have "Follow" or "Like", Profiles have "Add friend" or just "Friends" if already friends
-    // But honestly alUrl and friends tab cover 95% of cases.
-    return (
-      !!friendBtn || !!document.querySelector('a[href*="/friends_mutual"]')
-    );
-  }
-
-  function checkProfileState() {
-    const isProf = isProfile();
-    const root = document.getElementById("wam-root");
-    if (root) {
-      if (isProf) {
-        root.classList.add("wam-profile-mode");
-      } else {
-        root.classList.remove("wam-profile-mode");
-      }
-    }
-  }
-
-  /* ── REELS HIGHLIGHTER ── */
-  function processReels() {
-    // Process the first 14 reels
-    const allReels = Array.from(document.querySelectorAll('a[href*="/reel/"]'));
-    const targetReels = allReels.slice(0, 14);
-
-    targetReels.forEach((reel) => {
-      // Skip if we already colored this reel to save CPU/RAM
-      if (reel.dataset.wamHighlight) return;
-
-      const textNodes = Array.from(reel.querySelectorAll("span, div")).map(
-        (el) => el.innerText?.trim(),
-      );
-      let views = 0;
-
-      for (const text of textNodes) {
-        if (!text) continue;
-        const match = text.match(/([\d.]+)\s*([KkMm])/);
-        if (match) {
-          const num = parseFloat(match[1]);
-          const unit = match[2].toUpperCase();
-          if (unit === "K") views = num * 1000;
-          if (unit === "M") views = num * 1000000;
-          break;
-        } else if (text.match(/^[\d,]+$/)) {
-          const numStr = text.replace(/,/g, "");
-          if (numStr.length > 3) {
-            views = parseInt(numStr, 10);
-            if (views > 1000) break;
-          }
-        }
-      }
-
-      if (views >= 40000) {
-        reel.style.border = "4px solid #10b981";
-        reel.style.borderRadius = "8px";
-        reel.style.boxSizing = "border-box";
-        reel.dataset.wamHighlight = "green";
-      } else if (views >= 11000) {
-        reel.style.border = "4px solid #3b82f6";
-        reel.style.borderRadius = "8px";
-        reel.style.boxSizing = "border-box";
-        reel.dataset.wamHighlight = "blue";
-      } else {
-        reel.dataset.wamHighlight = "none"; // Mark as processed even if no color
-      }
-    });
-  }
-
-  /* ── KEYBOARD SHORTCUT (FALLBACK & ENHANCEMENT) ── */
+  /* ── KEYBOARD SHORTCUT (Ctrl+Q) ── */
   document.addEventListener("keydown", (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key && e.key.toLowerCase() === "q") {
-      // Avoid triggering when typing in inputs
       const activeEl = document.activeElement;
       const isInput = activeEl && (
         activeEl.tagName === 'INPUT' || 
@@ -998,27 +535,37 @@
         activeEl.isContentEditable
       );
       
-      if (!isInput) {
+      if (!isInput && extensionEnabled) {
         e.preventDefault();
         e.stopPropagation();
         
-        if (typeof collapsed !== "undefined" && collapsed) {
+        if (collapsed) {
           collapsed = false;
-          if (body) body.classList.remove("wam-collapsed");
-          if (colBtn) {
-            colBtn.innerHTML = I.collapse;
-            colBtn.title = "Collapse";
-          }
+          body.classList.remove("wam-collapsed");
+          colBtn.innerHTML = I.collapse;
+          colBtn.title = "Collapse";
         }
-        if (panel) panel.classList.remove("wam-hidden");
+        panel.classList.remove("wam-hidden");
         
         copyBothClips();
       }
     }
   });
 
+  // Regular updates
   setInterval(() => {
-    checkProfileState();
-    processReels();
+    if (window.wam.checkProfileState) window.wam.checkProfileState();
+    if (window.wam.processReels) window.wam.processReels();
   }, 2500);
+
+  // Initial state check
+  try {
+    chrome.storage.local.get({ extensionEnabled: true }, (result) => {
+      if (chrome.runtime.lastError) return;
+      extensionEnabled = !!result.extensionEnabled;
+      if (!extensionEnabled) {
+        panel.classList.add("wam-hidden");
+      }
+    });
+  } catch (_) {}
 })();

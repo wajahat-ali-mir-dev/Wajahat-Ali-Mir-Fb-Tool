@@ -5,6 +5,54 @@ const pd = document.getElementById("pd");
 const st = document.getElementById("st");
 const cb = document.getElementById("cb");
 
+// ── Enable/Disable Toggle ──
+const extToggle = document.getElementById("extToggle");
+const toggleLabel = document.getElementById("toggleLabel");
+
+let extensionEnabled = true;
+
+function applyToggleUI(enabled) {
+  extensionEnabled = enabled;
+  if (enabled) {
+    extToggle.classList.add("active");
+    toggleLabel.textContent = "ON";
+    document.body.classList.remove("ext-disabled");
+    pd.className = "";
+    st.textContent = "Ready to extract & copy";
+  } else {
+    extToggle.classList.remove("active");
+    toggleLabel.textContent = "OFF";
+    document.body.classList.add("ext-disabled");
+    pd.className = "e";
+    st.textContent = "Extension disabled";
+  }
+}
+
+// Load saved state on popup open
+chrome.storage.local.get({ extensionEnabled: true }, (result) => {
+  applyToggleUI(result.extensionEnabled);
+});
+
+// Toggle click handler
+extToggle.addEventListener("click", () => {
+  const newState = !extensionEnabled;
+  chrome.storage.local.set({ extensionEnabled: newState }, () => {
+    applyToggleUI(newState);
+
+    // Notify all Facebook tabs about the state change
+    chrome.tabs.query({}, (tabs) => {
+      for (const tab of tabs) {
+        if (tab.url && (tab.url.includes("facebook.com"))) {
+          chrome.tabs.sendMessage(tab.id, {
+            action: "setEnabled",
+            enabled: newState
+          }, () => void chrome.runtime.lastError);
+        }
+      }
+    });
+  });
+});
+
 const SVG_CLIP = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="13" height="17" rx="2.5" fill="none"/><rect x="2" y="5" width="13" height="17" rx="2.5" fill="rgba(255,255,255,0.2)"/></svg>`;
 
 const SVG_CHECK = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
@@ -95,7 +143,30 @@ function showResults(data) {
 // Initialize
 setStatus("", "Ready to extract & copy");
 
+async function writeClipboard(text) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (_) {}
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0;";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch (_) {
+    return false;
+  }
+}
+
 cb.addEventListener("click", () => {
+  if (!extensionEnabled) return;
   setStatus("w", "Connecting to page...");
   setBtn("processing");
 
@@ -109,14 +180,30 @@ cb.addEventListener("click", () => {
     }
 
     function send() {
-      chrome.tabs.sendMessage(tabId, { action: "triggerCopy" }, (resp) => {
+      chrome.tabs.sendMessage(tabId, { action: "triggerCopy" }, async (resp) => {
         void chrome.runtime.lastError;
-        const ok = resp && resp.success;
-        setBtn(ok ? "ok" : "fail");
-        setStatus(ok ? "" : "e", ok ? "Both clips copied!" : "Copy failed");
+        let ok = resp && resp.success;
         if (ok && resp.data) {
           showResults(resp.data);
+          
+          const d = resp.data;
+          const emailText = d.emails && d.emails.length ? d.emails.join(", ") : "No_Email_Found";
+          const detailsText = [
+            `Guest FB Page Name: ${d.name || "Unknown"}`,
+            `Guest FB Page Link: ${d.url}`,
+            `Guest Bio: "${d.bio || ""}"`,
+            `Guest IG Link: ${d.insta || ""}`,
+            `Guest Email: ${emailText}`
+          ].join("\n");
+          
+          // Write to clipboard from popup context (safe and active document context)
+          const ok1 = await writeClipboard(detailsText);
+          await new Promise((r) => setTimeout(r, 800));
+          const ok2 = await writeClipboard(emailText);
+          ok = ok1 || ok2;
         }
+        setBtn(ok ? "ok" : "fail");
+        setStatus(ok ? "" : "e", ok ? "Clips ready — Ctrl+V (or Win+V)" : "Copy failed");
         reset();
       });
     }
@@ -128,7 +215,10 @@ cb.addEventListener("click", () => {
         send();
       } else {
         chrome.scripting.executeScript(
-          { target: { tabId }, files: ["content.js"] },
+          { 
+            target: { tabId }, 
+            files: ["content-utils.js", "content-extractor.js", "content-ui.js"] 
+          },
           () => {
             void chrome.runtime.lastError;
             setTimeout(send, 500);

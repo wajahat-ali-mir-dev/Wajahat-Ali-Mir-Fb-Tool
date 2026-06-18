@@ -118,7 +118,7 @@ async function injectContentScript(tabId, retries = 0) {
   try {
     await chrome.scripting.executeScript({
       target: { tabId },
-      files: ["content.js"]
+      files: ["content-utils.js", "content-extractor.js", "content-ui.js"]
     });
 
     // Wait for script to initialize
@@ -303,6 +303,13 @@ chrome.commands.onCommand.addListener(async (command) => {
   Logger.info('Keyboard shortcut triggered');
 
   try {
+    // Check if extension is enabled
+    const { extensionEnabled = true } = await chrome.storage.local.get({ extensionEnabled: true });
+    if (!extensionEnabled) {
+      Logger.info('Extension is disabled, ignoring shortcut');
+      return;
+    }
+
     const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
 
     if (!tab?.id) {

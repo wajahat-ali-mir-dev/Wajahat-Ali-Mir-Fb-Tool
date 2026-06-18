@@ -509,6 +509,83 @@
       }
     }
 
+    /* Toggle Switch */
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .toggle-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.75);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .toggle-track {
+      width: 40px;
+      height: 22px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      flex-shrink: 0;
+    }
+
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .toggle-track.active {
+      background: rgba(16, 185, 129, 0.6);
+      border-color: rgba(16, 185, 129, 0.4);
+    }
+
+    .toggle-track.active::after {
+      left: 20px;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+    }
+
+    .toggle-track:hover {
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .toggle-track:active::after {
+      width: 20px;
+    }
+
+    .toggle-track.active:active::after {
+      left: 16px;
+    }
+
+    /* Disabled state for body content */
+    body.ext-disabled .bd {
+      opacity: 0.35;
+      pointer-events: none;
+      filter: grayscale(0.5);
+      transition: all 0.4s ease;
+    }
+
+    body.ext-disabled .ftr {
+      opacity: 0.5;
+    }
+
     /* Footer */
     .ftr {
       border-top: 1px solid rgba(255, 255, 255, 0.05);
@@ -661,7 +738,10 @@
       <h1>Professional Data Extractor</h1>
       <p>by Wajahat Ali Mir · Facebook Only</p>
     </div>
-    <span class="vbadge">v3.0.0</span>
+    <div class="toggle-wrap">
+      <span class="toggle-label" id="toggleLabel">ON</span>
+      <div class="toggle-track active" id="extToggle" title="Enable / Disable Extension"></div>
+    </div>
   </div>
 
   <div class="bd">
@@ -689,7 +769,7 @@
       </div>
       <div class="cell">
         <span class="clbl2">Shortcut</span>
-        <span class="cval">Alt + C</span>
+        <span class="cval">Ctrl + Q</span>
       </div>
     </div>
 
@@ -755,7 +835,7 @@
   <div class="ftr">
     <span class="fby">✦ <a href="https://github.com/wajahat-ali-mir-dev" target="_blank"
         style="color:inherit;text-decoration:none;"><b>Wajahat Ali Mir</b></a></span>
-    <span class="fkb">Use <kbd>Alt</kbd><kbd>C</kbd> anytime</span>
+    <span class="fkb">Use <kbd>Ctrl</kbd><kbd>Q</kbd> anytime</span>
   </div>
 
   <script src="popup.js"></script>
