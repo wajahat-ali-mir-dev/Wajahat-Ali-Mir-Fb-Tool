@@ -1,8 +1,8 @@
 {
    "manifest_version": 3,
    "name": "wajahat_ali_mir Toolkit",
-   "version": "3.0.0",
-   "version_name": "3.0.0 — Light Optimized",
+   "version": "3.0.1",
+   "version_name": "3.0.1 — Light Optimized",
    "description": "Lightweight Facebook data extractor with persistent storage and CSV export.",
    "author": "Wajahat Ali Mir",
    "homepage_url": "https://github.com/wajahat-ali-mir-dev",
