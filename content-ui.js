@@ -409,7 +409,7 @@
   /* ── COPY TRIGGER Orchestration ── */
   let activeExtractionPromise = null;
 
-  async function copyBothClips() {
+  async function copyBothClips(shouldWriteClipboard = true) {
     if (!extensionEnabled) return { ok: false, error: "Extension disabled" };
     
     if (activeExtractionPromise) {
@@ -451,17 +451,18 @@
           `Guest Email: ${emailText}`
         ].join("\n");
 
-        let ok1 = false;
-        let ok2 = false;
+        let ok = true;
+        if (shouldWriteClipboard) {
+          let ok1 = false;
+          let ok2 = false;
 
-        if (window.wam.writeClipboard) {
-          ok1 = await window.wam.writeClipboard(detailsText);
-          await new Promise((r) => setTimeout(r, 800));
-          ok2 = await window.wam.writeClipboard(emailText);
+          if (window.wam.writeClipboard) {
+            ok1 = await window.wam.writeClipboard(detailsText);
+            await new Promise((r) => setTimeout(r, 800));
+            ok2 = await window.wam.writeClipboard(emailText);
+          }
+          ok = ok1 || ok2;
         }
-
-        // Success if at least the details block (which now includes email) was written
-        const ok = ok1 || ok2;
 
         if (ok) {
           setStatus("", "Clips ready — Ctrl+V (or Win+V)", "wam-active");
@@ -521,7 +522,8 @@
         }
         panel.classList.remove("wam-hidden");
 
-        copyBothClips().then((result) =>
+        const pageHasFocus = document.hasFocus();
+        copyBothClips(pageHasFocus).then((result) =>
           sendResponse({
             success: !!(result && result.ok),
             data: result ? result.data : null,

@@ -48,6 +48,34 @@
     return false;
   }
 
+  /* ── CLEAN VERIFIED TEXT ── */
+  function cleanTextVerified(text) {
+    if (!text) return "";
+    return text
+      .replace(/\bVerified(?:\s+account)?\b[\s\W]*$/i, "")
+      .replace(/[\s\(\)\[\]\-\|\•\·\–\—]+$/, "")
+      .trim();
+  }
+
+  function getElementCleanText(el) {
+    if (!el) return "";
+    try {
+      const clone = el.cloneNode(true);
+      // Remove SVGs which often contain "Verified account" title/aria-label/text
+      clone.querySelectorAll("svg").forEach(svg => svg.remove());
+      // Also remove elements with aria-label containing "Verified"
+      clone.querySelectorAll("*").forEach(child => {
+        const label = child.getAttribute("aria-label") || "";
+        if (label.toLowerCase().includes("verified")) {
+          child.remove();
+        }
+      });
+      return cleanTextVerified(clone.textContent || "");
+    } catch (_) {
+      return cleanTextVerified(el.textContent || "");
+    }
+  }
+
   /* ── EXTRACT NAME ── */
   window.wam.getPageName = function () {
     try {
@@ -89,7 +117,7 @@
             '[role="main"] h1, [data-pagelet="ProfileActions"] h1',
           );
           if (mainH1) {
-            const h1Text = mainH1.textContent?.trim();
+            const h1Text = getElementCleanText(mainH1);
             if (h1Text && !isJunkTitle(h1Text) && h1Text.length < 140) {
               return h1Text;
             }
@@ -99,7 +127,7 @@
             "h1[class] span a, h1 span",
           );
           if (profileName) {
-            const pn = profileName.textContent?.trim();
+            const pn = getElementCleanText(profileName);
             if (pn && !isJunkTitle(pn) && pn.length > 1 && pn.length < 140) {
               return pn;
             }
@@ -112,7 +140,7 @@
       const mainContent = document.querySelector('[role="main"]');
       if (mainContent) {
         for (const h of mainContent.querySelectorAll("h1")) {
-          const t = h.textContent?.trim();
+          const t = getElementCleanText(h);
           if (t && t.length > 1 && t.length < 140 && !isJunkTitle(t)) {
             return t;
           }
@@ -122,7 +150,7 @@
       // 3. Try og:title but ONLY if not junk
       const og = document.querySelector('meta[property="og:title"]');
       if (og?.content?.trim() && !isJunkTitle(og.content.trim())) {
-        return og.content.trim();
+        return cleanTextVerified(og.content.trim());
       }
 
       // 4. Fallback: clean document.title
@@ -130,7 +158,7 @@
         .replace(/\s*[|\-–—]\s*(Facebook|Instagram|LinkedIn).*$/i, "")
         .replace(/^\(\d+\)\s*/, "")
         .trim();
-      if (cleaned && !isJunkTitle(cleaned)) return cleaned;
+      if (cleaned && !isJunkTitle(cleaned)) return cleanTextVerified(cleaned);
 
       return "Unknown";
     } catch (_) {
@@ -467,7 +495,6 @@
       url: window.location.href,
       emails: window.wam.getEmails(),
       phones: window.wam.getPhoneNumbers(),
-      verified: window.wam.isVerified(),
       bio: window.wam.getBio(name),
       insta: window.wam.getInstagram(),
     };
